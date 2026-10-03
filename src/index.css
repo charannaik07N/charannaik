@@ -1,0 +1,488 @@
+@import "tailwindcss";
+
+/* Every colour is a variable. Dark values live here; the light theme
+   overrides the same variables once, in the media query below. */
+@theme {
+  --color-ink: #000000; /* page */
+  --color-ink-2: #161617; /* alternate section band */
+  --color-surface: #161617; /* cards on the page */
+  --color-raised: #1d1d1f; /* cards on a band, image frames */
+  --color-fg: #f5f5f7;
+  --color-muted: #86868b;
+  --color-accent: #2997ff; /* links */
+  --color-line: rgba(255, 255, 255, 0.12);
+  --color-line-strong: rgba(255, 255, 255, 0.3);
+  --color-nav: rgba(22, 22, 23, 0.8);
+  --color-button: #0071e3;
+  --color-button-hover: #0077ed;
+
+  /* SF on Apple devices; Inter (bundled) everywhere else. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Inter Variable", "Inter", "Helvetica Neue", Arial, sans-serif;
+
+  /* Two radii only: cards, and the smaller things inside them. */
+  --radius-card: 28px;
+  --radius-small: 14px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Glass tokens. Dark values here, light values in the block below. */
+:root {
+  --glass-bg: rgba(28, 28, 30, 0.55);
+  --glass-bg-nav: rgba(28, 28, 30, 0.68);
+  --glass-bg-strong: rgba(28, 28, 30, 0.72);
+  --glass-bg-solid: rgba(28, 28, 30, 0.94); /* no backdrop-filter support */
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-shadow-hover: 0 14px 40px rgba(0, 0, 0, 0.5);
+  --glass-highlight: rgba(255, 255, 255, 0.08); /* top inner edge */
+  --glass-sheen: rgba(255, 255, 255, 0.07); /* diagonal light across the sheet */
+  --glass-blur: blur(20px) saturate(180%);
+  --blob-opacity: 0.34;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.55);
+    --glass-bg-nav: rgba(255, 255, 255, 0.6);
+    --glass-bg-strong: rgba(255, 255, 255, 0.72);
+    --glass-bg-solid: rgba(255, 255, 255, 0.94);
+    --glass-border: rgba(255, 255, 255, 0.6);
+      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --glass-shadow-hover: 0 14px 40px rgba(0, 0, 0, 0.12);
+    --glass-highlight: rgba(255, 255, 255, 0.5);
+    --glass-sheen: rgba(255, 255, 255, 0.45);
+      --blob-opacity: 0.24;
+
+    --color-ink: #ffffff;
+    --color-ink-2: #f5f5f7;
+    --color-surface: #f5f5f7;
+    --color-raised: #ffffff;
+    --color-fg: #1d1d1f;
+    --color-muted: #6e6e73;
+    --color-accent: #0066cc;
+    --color-line: rgba(0, 0, 0, 0.12);
+    --color-line-strong: rgba(0, 0, 0, 0.3);
+    --color-nav: rgba(255, 255, 255, 0.8);
+  }
+}
+
+/* Increase Contrast: secondary text and hairlines move closer to the main text. */
+@media (prefers-contrast: more) {
+  :root {
+    --color-muted: #c7c7cc;
+    --color-line: rgba(255, 255, 255, 0.35);
+    --color-line-strong: rgba(255, 255, 255, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.4);
+  }
+}
+
+@media (prefers-contrast: more) and (prefers-color-scheme: light) {
+  :root {
+    --color-muted: #3a3a3c;
+    --color-line: rgba(0, 0, 0, 0.35);
+    --color-line-strong: rgba(0, 0, 0, 0.6);
+    --glass-border: rgba(0, 0, 0, 0.3);
+  }
+}
+
+@layer base {
+  html {
+    background: var(--color-ink);
+    color-scheme: light dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100svh;
+    overflow-x: clip;
+    background: var(--color-ink);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgba(41, 151, 255, 0.35);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  main:focus {
+    outline: none;
+  }
+
+  /* Reduced motion: no reveals, no looping animation, nothing over 200ms.
+     Anything that would animate in is simply shown. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 150ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    [data-reveal] {
+      opacity: 1 !important;
+      transform: none !important;
+      filter: none !important;
+    }
+  }
+}
+
+/* Glass. One class, used wherever a surface floats over colour. */
+@layer components {
+  .glass {
+    /* A faint diagonal sheen, as if light catches the top-left of the sheet. */
+    background:
+      linear-gradient(135deg, var(--glass-sheen) 0%, transparent 42%),
+      var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      var(--glass-shadow),
+      inset 0 1px 0 var(--glass-highlight);
+    border-radius: var(--radius-card);
+  }
+
+  .glass-nav {
+    background: var(--glass-bg-nav);
+  }
+
+  .glass-strong {
+    background: var(--glass-bg-strong);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass,
+    .glass-nav,
+    .glass-strong {
+      background: var(--glass-bg-solid);
+    }
+  }
+
+  /* Reduce Transparency: glass turns solid and the drifting colour goes. */
+  @media (prefers-reduced-transparency: reduce) {
+    .glass,
+    .glass-nav,
+    .glass-strong {
+      background: var(--glass-bg-solid);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .blobs {
+      display: none;
+    }
+  }
+
+  /* Hover lifts the card and brightens its edge; press settles it. */
+  .card-lift {
+    transition:
+      transform 200ms ease-out,
+      box-shadow 200ms ease-out,
+      border-color 200ms ease-out;
+  }
+
+  @media (hover: hover) {
+    .card-lift:hover {
+      transform: translateY(-2px);
+      border-color: var(--color-line-strong);
+      box-shadow: var(--glass-shadow-hover);
+    }
+  }
+
+  .card-lift:active {
+    transform: scale(0.98);
+  }
+
+  /* Hover: an iridescent rim runs around a card's edge. Painted on a 1px ring
+     only, and only while hovered, so it costs nothing at rest. */
+  .card-rim {
+    position: relative;
+  }
+
+  .card-rim::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--rim-angle),
+      #2997ff,
+      #8e5bff,
+      #ff5fa2,
+      #ffb340,
+      #2997ff
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 300ms ease-out;
+  }
+
+  @media (hover: hover) {
+    .card-rim:hover::after {
+      opacity: 1;
+      animation: rim-spin 3.5s linear infinite;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-rim:hover::after {
+      animation: none;
+    }
+  }
+
+  /* Soft colour for the glass to blur. Decorative only. */
+  .blobs {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    /* Fade at the section's top and bottom so the clip never shows as a line. */
+    mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+  }
+
+  /* The soft edge is drawn by the gradient, not filter: blur(), so the drift
+     is a plain transform the compositor moves without repainting. */
+  .blob {
+    position: absolute;
+    width: min(48rem, 120vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--blob-color), transparent);
+    opacity: var(--blob-opacity);
+    will-change: transform;
+    animation: blob-drift 26s ease-in-out infinite alternate;
+  }
+
+  /* Off screen, the drift stops (see GlassBackdrop.jsx). */
+  .blobs-paused .blob {
+    animation-play-state: paused;
+  }
+
+  .blob-blue {
+    --blob-color: #0071e3;
+    top: -20%;
+    left: -16%;
+  }
+
+  .blob-violet {
+    --blob-color: #8e5bff;
+    top: 10%;
+    right: -18%;
+    animation-duration: 32s;
+    animation-delay: -9s;
+  }
+
+  .blob-pink {
+    --blob-color: #ff5fa2;
+    bottom: -30%;
+    left: 20%;
+    animation-duration: 38s;
+    animation-delay: -17s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blob {
+      animation: none;
+    }
+  }
+
+  /* Stands in for a project screenshot until the file exists. */
+  .image-placeholder {
+    background:
+      radial-gradient(60% 80% at 12% 18%, rgba(0, 113, 227, 0.3), transparent 70%),
+      radial-gradient(55% 75% at 88% 28%, rgba(142, 91, 255, 0.28), transparent 70%),
+      radial-gradient(60% 80% at 58% 105%, rgba(255, 95, 162, 0.26), transparent 70%),
+      var(--color-raised);
+  }
+}
+
+@property --rim-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes rim-spin {
+  to {
+    --rim-angle: 360deg;
+  }
+}
+
+@keyframes blob-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(7%, 9%, 0) scale(1.12);
+  }
+}
+
+/* Layout */
+
+@utility container-x {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+
+  @media (min-width: 640px) {
+    padding-inline: 2rem;
+  }
+
+  @media (min-width: 1024px) {
+    padding-inline: 2.5rem;
+  }
+}
+
+@utility section-y {
+  padding-block: 6rem;
+
+  @media (min-width: 768px) {
+    padding-block: 9rem;
+  }
+
+  @media (min-width: 1280px) {
+    padding-block: 11rem;
+  }
+}
+
+/* Type scale. Headings share one ratio: -0.015em tracking, 1.05 leading. */
+
+@utility text-display {
+  font-size: clamp(2.75rem, 14vw, 5.5rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+
+  @media (min-width: 640px) {
+    font-size: clamp(3.5rem, min(10.5vw, 12.5svh), 6.75rem);
+  }
+
+  @media (min-width: 1024px) {
+    font-size: clamp(3.5rem, min(8vw, 12.5svh), 7rem);
+  }
+}
+
+@utility text-closing {
+  font-size: clamp(2.125rem, 10.5vw, 8rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+
+@utility text-page {
+  font-size: clamp(2.5rem, 7vw, 6rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+
+@utility text-title {
+  font-size: clamp(2.25rem, 5.2vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+
+@utility text-statement {
+  font-size: clamp(1.875rem, 4.6vw, 4.25rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+@utility text-subtitle {
+  font-size: clamp(1.875rem, 3vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+}
+
+@utility text-heading {
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+@utility text-lede {
+  font-size: clamp(1.125rem, 1.5vw, 1.375rem);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+@utility text-figure {
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A text link with a 44px hit area. */
+@utility link-hit {
+  display: inline-flex;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  align-items: center;
+}
+
+/* Hero spacing follows viewport height so the whole statement fits on short laptops. */
+@utility hero-inset {
+  padding-top: clamp(5.5rem, 14svh, 8rem);
+  padding-bottom: clamp(2.5rem, 13svh, 7rem);
+}
+
+@utility hero-gap {
+  margin-top: clamp(1.5rem, 4.5svh, 3rem);
+}
+
+/* Hero dot texture, faded toward the edges. */
+@utility bg-dots {
+  background-image: radial-gradient(var(--color-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 75%);
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.125rem;
+  left: 0.75rem;
+  z-index: 100;
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  padding: 0 1rem;
+  border-radius: 999px;
+  background: var(--color-fg);
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
